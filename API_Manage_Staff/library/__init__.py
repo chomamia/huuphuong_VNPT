@@ -1,6 +1,6 @@
 from flask import Flask, request, Blueprint
 from library.staff.controller import staffs
-from .extension import db, ma
+from .extension import db, ma, mail
 import os
 from flask_mail import Mail, Message
 
@@ -15,7 +15,7 @@ def create_app(config_file = "config.py"):
     db.init_app(app)
     ma.init_app(app)
     app.config.from_pyfile(config_file)
-    mail = Mail(app)
+    mail.init_app(app)
     create_db(app)
     app.register_blueprint(staffs)
     return app
