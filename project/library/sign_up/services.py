@@ -60,7 +60,6 @@ def token_required(f):
         # return 401 if token is not passed
         if not token:
             return jsonify({'message' : 'Token is missing !!'}), 401
-
         try:
             # decoding the payload to fetch the stored details
             data = jwt.decode(token, "member")
@@ -75,16 +74,18 @@ def token_required(f):
 
 def signin_service():
     data = request.json
-    data = StaffSchema().load(data)
+    data = CustomerSchema().load(data)
     member = db.member.find_one({"user_name" : data["user_name"]})
     if data and ('user_name' in data) and ('password' in data):
         if data["user_name"] == member["user_name"]:
+            # global user_name_signin 
+            # user_name_signin = data["user_name"]
             if check_password_hash(member["password"], data["password"]):
                 token = jwt.encode({
                     'public_id': member["public_id"],
                     'exp' : datetime.utcnow() + timedelta(minutes = 30)
-                },'member')
-                return make_response(jsonify({'token' : token}), 201)
+                }, 'member', algorithm='HS256')
+                return make_response(jsonify({'token' : token.encode().decode('UTF-8')}), 201)
             else:
                 return make_response(
                     'Mật khẩu không chính xác',
@@ -95,7 +96,18 @@ def signin_service():
     else:
         return "Vui lòng nhập nhập đầy đủ tên đăng nhập và mật khẩu"
         
-    
+def logout_service():
+    token = None
+    # jwt is passed in the request header
+    if 'x-access-token' in request.headers:
+        token = request.headers['x-access-token']
+    # return 401 if token is not passed
+    if not token:
+        return jsonify({'message' : 'Token is missing !!'}), 401
+    db.blacklist_token.insert_one({"token" : token})
+    return "Dang xuat thanh cong"
+
+
 def forget_password_service():
     data = request.json
     if data:
@@ -109,7 +121,7 @@ def forget_password_service():
             email = member["email"]
             title_mail = "Xác thực tài khoản"
             msg = Message(title_mail, sender='huuphuongtp2@gmail.com', recipients=[email])
-            message_email = "Mã xác nhận 6 chữ số của bạn là: {}".format(number)
+            message_email = "Mã xác nhận 6 chữ số của bạn là: {} ".format(number)
             msg.body = message_email
             try: 
                 mail.send(msg)
@@ -145,6 +157,39 @@ def reset_password_service():
     else:
         return "Vui lòng nhập mật khẩu và nhập  lại mật khẩu"
 
+
+def acc_information_service():
+    token = None
+    # jwt is passed in the request header
+    if 'x-access-token' in request.headers:
+        token = request.headers['x-access-token']
+    # return 401 if token is not passed
+    if not token:
+        return jsonify({'message' : 'Token is missing !!'}), 401
+    if not db.blacklist_token.find_one({"token": token}):
+        try:
+            # # decoding the payload to fetch the stored details
+            data = jwt.decode(token, 'member', algorithms='HS256')
+            current_user = db.member.find_one({"public_id" : data["public_id"]})
+            if current_user:
+                data = request.json
+                member_query = {"public_id": current_user["public_id"]}
+                if data and "email" in data:
+                    if not db.member.find_one({"email" : data["email"]}):
+                        new_email = {"$set": {"email": data["email"]}}
+                        try:
+                            db.member.update_one(member_query, new_email)
+                            return "Cập nhật email thành công"
+                        except:
+                            return "Cập nhật email không thành công"
+                    else:
+                        return "Email đã tồn tại"
+        except:
+            return jsonify({
+                'message' : 'Token is invalid !!'
+            }), 401
+    else:
+        return "vui lòng đăng nhập để tiếp tục "
 
 
 
