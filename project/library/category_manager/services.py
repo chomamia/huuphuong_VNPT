@@ -4,7 +4,7 @@ from typing import Concatenate
 from flask_pymongo import PyMongo
 from flask import request, jsonify, make_response
 from library.extension import db, mail
-from library.library_ma import CustomerCategory, StaffSchemaCategory, StaffSchemagetCategory
+from library.library_ma import CustomerCategory, SchemaCategory, SchemagetCategory
 from flask import current_app, g
 from werkzeug.local import LocalProxy
 import jwt
@@ -15,9 +15,9 @@ import uuid
 from itertools import chain
 
 
-category_schema = StaffSchemaCategory()
-category_schemas = StaffSchemaCategory(many= True)
-get_category_schemas = StaffSchemagetCategory(many=True)
+category_schema = SchemaCategory()
+category_schemas = SchemaCategory(many= True)
+get_category_schemas = SchemagetCategory(many=True)
 
 def get_db():
     db = getattr(g, "_database", None)
@@ -29,10 +29,8 @@ db = LocalProxy(get_db)
 
 def add_category_service():
     token = None
-    # jwt is passed in the request header
-    if 'x-access-token' in request.headers:
-        token = request.headers['x-access-token']
-    # return 401 if token is not passed
+    if "Authorization" in request.headers:
+        token = request.headers["Authorization"].split(" ")[1]
     if not token:
         return jsonify({'message' : 'Token is missing !!'}), 401
     if not db.blacklist_token.find_one({"token": token}):
@@ -76,8 +74,8 @@ def add_category_service():
 
 def get_category_service():
     token = None
-    if 'x-access-token' in request.headers:
-        token = request.headers['x-access-token']
+    if "Authorization" in request.headers:
+        token = request.headers["Authorization"].split(" ")[1]
     if not token:
         return jsonify({'message' : 'Token is missing !!'}), 401
     if not db.blacklist_token.find_one({"token": token}):
@@ -132,8 +130,8 @@ def get_category_service():
 
 def edit_category_service(id):
     token = None
-    if 'x-access-token' in request.headers:
-        token = request.headers['x-access-token']
+    if "Authorization" in request.headers:
+        token = request.headers["Authorization"].split(" ")[1]
     if not token:
         return jsonify({'message' : 'Token is missing !!'}), 401
     if not db.blacklist_token.find_one({"token": token}):
@@ -175,8 +173,8 @@ def edit_category_service(id):
 
 def detail_category_service(id):
     token = None
-    if 'x-access-token' in request.headers:
-        token = request.headers['x-access-token']
+    if "Authorization" in request.headers:
+        token = request.headers["Authorization"].split(" ")[1]
     if not token:
         return jsonify({'message' : 'Token is missing !!'}), 401
     if not db.blacklist_token.find_one({"token": token}):
@@ -190,8 +188,8 @@ def detail_category_service(id):
 
 def delete_category_service(id):
     token = None
-    if 'x-access-token' in request.headers:
-        token = request.headers['x-access-token']
+    if "Authorization" in request.headers:
+        token = request.headers["Authorization"].split(" ")[1]
     if not token:
         return jsonify({'message' : 'Token is missing !!'}), 401
     if not db.blacklist_token.find_one({"token": token}):

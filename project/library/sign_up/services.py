@@ -2,7 +2,7 @@ from types import MemberDescriptorType
 from flask_pymongo import PyMongo
 from flask import request, jsonify, Flask, session, make_response
 from library.extension import db, mail
-from library.library_ma import StaffSchema, CustomerSchema
+from library.library_ma import Schema, CustomerSchema
 import random
 from flask_mail import Message
 from flask import current_app, g
@@ -14,8 +14,8 @@ from datetime import datetime, timedelta
 from functools import wraps
 
 
-member_schema = StaffSchema()
-members_schema = StaffSchema(many= True)
+member_schema = Schema()
+members_schema = Schema(many= True)
 
 def get_db():
     db = getattr(g, "_database", None)
@@ -160,10 +160,8 @@ def reset_password_service():
 
 def acc_information_service():
     token = None
-    # jwt is passed in the request header
-    if 'x-access-token' in request.headers:
-        token = request.headers['x-access-token']
-    # return 401 if token is not passed
+    if "Authorization" in request.headers:
+        token = request.headers["Authorization"].split(" ")[1]
     if not token:
         return jsonify({'message' : 'Token is missing !!'}), 401
     if not db.blacklist_token.find_one({"token": token}):

@@ -6,17 +6,21 @@ from .extension import ma
 from marshmallow import Schema, fields
 import re
 
-class StaffSchema(ma.Schema):
+class Schema(ma.Schema):
     class Meta:
         fields = ('user_name', 'email', 'password', 'repeat_password')
 
-class StaffSchemaCategory(ma.Schema):
+class SchemaCategory(ma.Schema):
     class Meta:
         fields = ('name_category', 'category_code', 'parent_category', 'status' )
 
-class StaffSchemagetCategory(ma.Schema):
+class SchemagetCategory(ma.Schema):
     class Meta:
         fields = ('name_category', 'category_code', 'time' )
+
+class SchemaNews(ma.Schema):
+    class Meta:
+        fields = ('title', 'name_category', 'URL_local', 'status')
 
 def validate_category(x):
     if not re.search("['~','!','@','#','$','%','^','&','*','(',')','+','-','=','<','>','.','?','/','\',')','(','}','{','.']", x):
@@ -50,3 +54,11 @@ class CustomerCategory(Schema):
     category_code = fields.Str(required=True, validate = lambda x: (len(x) <=100 and validate_user(x)))
     parent_category = fields.Str()
     status = fields.Str()
+
+class CustomerNews(Schema):
+    title = fields.Str(required=True, validate = lambda x: (len(x) <=100 and validate_category(x)))
+    name_category = fields.Str(required=True, validate = lambda x: (len(x) <=100 and validate_category(x)))
+    URL = fields.Str()
+    status = fields.Str(required=True, validate = lambda x: (len(x) <=1024))
+    class Meta:
+        strict = True
