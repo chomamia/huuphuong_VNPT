@@ -18,10 +18,18 @@ class SchemagetCategory(ma.Schema):
     class Meta:
         fields = ('name_category', 'category_code', 'time' )
 
+
 class SchemaNews(ma.Schema):
     class Meta:
         fields = ('title', 'name_category', 'URL_local', 'status')
 
+class SchemagetNews(ma.Schema):
+    class Meta:
+        fields = ('title', 'name_category', 'time')
+class Schemagetnewpost(ma.Schema):
+    class Meta:
+        fields = ('title', 'user_name', 'time', 'views', 'name_category')
+        
 def validate_category(x):
     if not re.search("['~','!','@','#','$','%','^','&','*','(',')','+','-','=','<','>','.','?','/','\',')','(','}','{','.']", x):
         return True

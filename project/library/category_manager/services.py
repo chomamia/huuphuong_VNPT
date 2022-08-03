@@ -26,7 +26,6 @@ def get_db():
     return db
 
 db = LocalProxy(get_db)
-
 def add_category_service():
     token = None
     if "Authorization" in request.headers:
@@ -171,6 +170,7 @@ def edit_category_service(id):
     else:
         return "Vui lòng đăng nhập để tiếp tục "
 
+
 def detail_category_service(id):
     token = None
     if "Authorization" in request.headers:
@@ -185,6 +185,7 @@ def detail_category_service(id):
             return "Không tìm thấy chuyên mục"
     else:
         return "Vui lòng đăng nhập để tiếp tục "
+
 
 def delete_category_service(id):
     token = None

@@ -1,10 +1,7 @@
-from distutils.util import change_root
-from sqlite3 import Date
-from typing import Concatenate
 from flask_pymongo import PyMongo
 from flask import request, jsonify, make_response
 from library.extension import db, mail
-from library.library_ma import  SchemaNews, CustomerNews
+from library.library_ma import  SchemaNews, CustomerNews, SchemagetNews
 from flask import current_app, g
 from werkzeug.local import LocalProxy
 import jwt
@@ -17,7 +14,8 @@ import imgbbpy
 
 news_schema = SchemaNews()
 news_schemas = SchemaNews(many= True)
-# get_category_schemas = SchemagetCategory(many=True)
+get_news_schemas = SchemagetNews(many=True)
+get_news_schema = SchemagetNews()
 
 def get_db():
     db = getattr(g, "_database", None)
@@ -46,6 +44,7 @@ def add_news_service():
             image = client.upload(file=URL_local)
             URL = image.url
             time = datetime.now()
+            view = 0
             news = {
                 "id_member": token_decode["public_id"],
                 "id_news": str(uuid.uuid4()),
@@ -54,7 +53,8 @@ def add_news_service():
                 "URL_local": URL_local,
                 "URL": URL,
                 "status": status,
-                "time" : time
+                "time" : time,
+                "view" : view
             }
             try:
                 db.news.insert_one(news)
@@ -63,6 +63,61 @@ def add_news_service():
                 return "Thêm tin bài thất bại!"
         else:
             return "Vùi lòng nhập đầy đủ !"
+
+def get_news_service():
+    token = None
+    if "Authorization" in request.headers:
+        token = request.headers["Authorization"].split(" ")[1]
+    if not token:
+        return jsonify({'message' : 'Token is missing !!'}), 401
+    if not db.blacklist_token.find_one({"token": token}):
+        data = request.json
+        if not "search" in data and not "start_date" in data and not "end_date" in data:
+            return get_news_schemas.jsonify(db.news.find())
+        if not "search" in data and "start_date" in data:
+            if "end_date" in data:
+                news = db.news.find({
+                "time": {
+                "$gt" :datetime.strptime(data["start_date"], '%Y-%m-%d'),
+                "$lt" :datetime.strptime(data["end_date"],  '%Y-%m-%d')
+                }
+                })
+                return get_news_schemas.jsonify(news)
+            else:
+                news = db.news.find({
+                "time": {
+                "$gt" :datetime.strptime(data["start_date"], '%Y-%m-%d'),
+                "$lt" :datetime.now()
+                }
+                })
+                return get_news_schemas.jsonify(news)
+        if "search" in data:
+            title = db.news.find({"title": data["search"]})
+            if "start_date" in data:
+                if "end_date" in data:
+                    news = db.news.find({
+                    "time": {
+                    "$gt" :datetime.strptime(data["start_date"], '%Y-%m-%d'),
+                    "$lt" :datetime.strptime(data["end_date"],  '%Y-%m-%d')
+                    }
+                    })
+                else:
+                    news = db.news.find({
+                    "time": {
+                    "$gt" :datetime.strptime(data["start_date"], '%Y-%m-%d'),
+                    "$lt" :datetime.now()
+                    }
+                    })
+                data_news = []
+                for x in title:
+                    if x in news:
+                        data_news.append(x)
+                return get_news_schemas.jsonify(data_news)
+            else:
+                return get_news_schemas.jsonify(title)
+    else:
+        return "Vui lòng đăng nhập để tiếp tục "
+
 
 def edit_news_service(id):
     token = None
